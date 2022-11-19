@@ -10,6 +10,10 @@ namespace GlobalWarmingCellularAutomata.Automata.Entities
         public CloudsRate clouds { get; set; }
         public TemprateureRate temperature { get; set; }
         public Wind wind { get; set; }
+        public int HotDaysCounter { get; set; }
+        public int ColdDaysCounter { get; set; }
+        public int RainDaysCounter { get; set; }
+
 
         public Cell(CellType cellType, AirPollutionRate airPollution, CloudsRate clouds, TemprateureRate temperature, Wind wind)
         {

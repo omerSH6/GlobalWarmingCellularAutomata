@@ -4,6 +4,6 @@
     {
         None,
         Medium,
-        high,
+        High,
     }
 }

@@ -1,4 +1,7 @@
-﻿using GlobalWarmingCellularAutomata.Automata.Entities;
+﻿using System.ComponentModel;
+using GlobalWarmingCellularAutomata.Automata.Entities;
+using GlobalWarmingCellularAutomata.Automata.Entities.Data;
+using GlobalWarmingCellularAutomata.Automata.Enums;
 
 namespace GlobalWarmingCellularAutomata.Automata
 {
@@ -40,7 +43,51 @@ namespace GlobalWarmingCellularAutomata.Automata
 
         private Cell GetUpdatedCell(Cell currentCell, CellNeighbors cellNeighbors)
         {
-            return new Cell();
+            CellType cellType = currentCell.cellType;
+            CloudsRate clouds = currentCell.clouds;
+            TemprateureRate temprateure = currentCell.temperature;
+            WindDirection windDirection = currentCell.wind.WindDirection;
+            WindForceScale windForceScale = currentCell.wind.WindForceScale;
+            AirPollutionRate airPollution = currentCell.airPollution;
+
+
+            var neighborsWithWindDirectedAtThisCell = GetNeighborsWithWindDirectedAtThisCell(currentCell, cellNeighbors);
+
+            switch (neighborsWithWindDirectedAtThisCell.Count)
+            {
+                case 0:
+                    break;
+
+                case 1:
+                    clouds = neighborsWithWindDirectedAtThisCell[0].clouds;
+                    temprateure = neighborsWithWindDirectedAtThisCell[0].temperature;
+                    windDirection = neighborsWithWindDirectedAtThisCell[0].wind.WindDirection;
+                    windForceScale = neighborsWithWindDirectedAtThisCell[0].wind.WindForceScale;
+                    airPollution = neighborsWithWindDirectedAtThisCell[0].airPollution;
+                    break;
+
+                default:
+                    var HigherWindForceScaleDirectedNeighbor = GetHigherWindForceScaleDirectedNeighbor(neighborsWithWindDirectedAtThisCell);
+                    windDirection = HigherWindForceScaleDirectedNeighbor.wind.WindDirection;
+
+                   
+                    /*
+                    clouds = neighborsWithWindDirectedAtThisCell.s
+                    temprateure = neighborsWithWindDirectedAtThisCell[0].temperature;
+                    windForceScale = neighborsWithWindDirectedAtThisCell[0].wind.WindForceScale;
+                    airPollution = neighborsWithWindDirectedAtThisCell[0].airPollution;
+                    */
+
+                    break;
+            }
+
+
+            return new Cell(cellType, airPollution, clouds, temprateure, new Wind(windDirection, windForceScale));
+        }
+
+        private static Cell GetHigherWindForceScaleDirectedNeighbor(List<Cell> neighborsWithWindDirectedAtThisCell)
+        {
+            return neighborsWithWindDirectedAtThisCell.OrderBy(cell => cell.wind.WindForceScale).ToList().Last();
         }
 
         private void UpdateCellsGrid(Cell[,] updatedCellsGrid)
@@ -88,6 +135,33 @@ namespace GlobalWarmingCellularAutomata.Automata
             cellNeighbors.RightNeighbor = cellsGrid[RightNeighborRow, RightNeighborColumn];
             cellNeighbors.LeftNeighbor = cellsGrid[LeftNeighborRow, LeftNeighborColumn];
             return cellNeighbors;
+        }
+
+        private static List<Cell> GetNeighborsWithWindDirectedAtThisCell(Cell currentCell, CellNeighbors cellNeighbors)
+        {
+            var neighborsWithWindDirectedAtThisCell = new List<Cell>();
+
+            if (cellNeighbors.UpperNeighbor.wind.WindDirection == WindDirection.South)
+            {
+                neighborsWithWindDirectedAtThisCell.Add(cellNeighbors.UpperNeighbor);
+            }
+
+            if (cellNeighbors.LowerNeighbor.wind.WindDirection == WindDirection.North)
+            {
+                neighborsWithWindDirectedAtThisCell.Add(cellNeighbors.LowerNeighbor);
+            }
+
+            if (cellNeighbors.LeftNeighbor.wind.WindDirection == WindDirection.East)
+            {
+                neighborsWithWindDirectedAtThisCell.Add(cellNeighbors.LeftNeighbor);
+            }
+
+            if (cellNeighbors.RightNeighbor.wind.WindDirection == WindDirection.West)
+            {
+                neighborsWithWindDirectedAtThisCell.Add(cellNeighbors.RightNeighbor);
+            }
+
+            return neighborsWithWindDirectedAtThisCell;
         }
     }
 }

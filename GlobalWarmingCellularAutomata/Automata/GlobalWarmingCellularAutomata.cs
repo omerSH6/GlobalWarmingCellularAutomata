@@ -45,22 +45,27 @@ namespace GlobalWarmingCellularAutomata.Automata
                 {CellType.Sea, GetRoundedPercentage(cellsInGris, automataSettings.EarthSeasPercentage)},
             };
 
-            var airPollutionRatesList = new List<AirPollutionRate> { AirPollutionRate.None, AirPollutionRate.Medium, AirPollutionRate.high };
             var cloudsRatesRateList = new List<CloudsRate> { CloudsRate.None, CloudsRate.Cloudy, CloudsRate.RainClouds };
             var temprateureRatesList = new List<TemprateureRate> { TemprateureRate.Freezing,TemprateureRate.warm, TemprateureRate.Hot, TemprateureRate.ExtreamHot};
             var WindDirectionsList = new List<WindDirection> { WindDirection.North, WindDirection.East, WindDirection.South, WindDirection.West};
             var WindForceScalesList = new List<WindForceScale> { WindForceScale.ExtreamWind, WindForceScale.None, WindForceScale.StrongWind, WindForceScale.CasualWind};
+            var airPollutionRatesList = new List<AirPollutionRate> { AirPollutionRate.Medium, AirPollutionRate.High };
 
             for (int i = 0; i < cellsGrid.GetLength(0); i++)
             {
                 for (int j = 0; j < cellsGrid.GetLength(1); j++)
                 {
                     CellType cellType = GetRandomCellTypeFromDistributeDict(cellsTypeToDistributeDict);
-                    AirPollutionRate airPollution = GetRandomValueFromList(airPollutionRatesList);
                     CloudsRate clouds = GetRandomValueFromList(cloudsRatesRateList);
                     TemprateureRate temprateure = GetRandomValueFromList(temprateureRatesList);
                     WindDirection windDirection = GetRandomValueFromList(WindDirectionsList);
                     WindForceScale windForceScale = GetRandomValueFromList(WindForceScalesList);
+                    AirPollutionRate airPollution = AirPollutionRate.None;
+
+                    if (cellType == CellType.City)
+                    {
+                        airPollution = GetRandomValueFromList(airPollutionRatesList);
+                    }
 
                     cellsGrid[i,j] = new Cell(cellType, airPollution, clouds, temprateure, new Wind(windDirection, windForceScale));
                 }

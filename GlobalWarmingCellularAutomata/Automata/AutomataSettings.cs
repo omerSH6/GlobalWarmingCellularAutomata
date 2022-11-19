@@ -5,12 +5,12 @@ namespace GlobalWarmingCellularAutomata.Automata
 {
     public class AutomataSettings
     {
-        public int GridSize { get; set; } = 100;
+        public int GridSize { get; set; } = 10;
         public int EarthLandsPercentage { get; } = 10;
         public int EarthCitiesPercentage { get; } = 10;
         public int EarthForestsPercentage { get; } = 10;
-        public int EarthGlaciersPercentage { get; } = 30;
-        public int EarthSeasPercentage { get; } = 40;
+        public int EarthGlaciersPercentage { get; } = 20;
+        public int EarthSeasPercentage { get; } = 50;
         public AirPollutionRate CitiesAirPollutionRateInitValue { get; set; } = AirPollutionRate.Medium;
         public TemprateureRate SeasTemprateureRateInitValue { get; set; } = TemprateureRate.Cold;
         public CloudsRate LandsCloudsRateInitValue { get; set; } = CloudsRate.None;
