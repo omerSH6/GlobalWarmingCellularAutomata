@@ -7,13 +7,13 @@ namespace GlobalWarmingCellularAutomata.Automata
     {
         public int GridSize { get; set; } = 10;
         public int EarthLandsPercentage { get; } = 10;
-        public int EarthCitiesPercentage { get; } = 10;
-        public int EarthForestsPercentage { get; } = 10;
-        public int EarthGlaciersPercentage { get; } = 20;
-        public int EarthSeasPercentage { get; } = 50;
+        public int EarthCitiesPercentage { get; } = 20;
+        public int EarthForestsPercentage { get; } = 20;
+        public int EarthGlaciersPercentage { get; } = 10;
+        public int EarthSeasPercentage { get; } = 40;
         public AirPollutionRate CitiesAirPollutionRateInitValue { get; set; } = AirPollutionRate.Medium;
-        public TemprateureRate SeasTemprateureRateInitValue { get; set; } = TemprateureRate.Cold;
+        public TemperatureRate SeasTemprateureRateInitValue { get; set; } = TemperatureRate.Cold;
         public CloudsRate LandsCloudsRateInitValue { get; set; } = CloudsRate.None;
-        public WindForceScale glaciersWindForceScaleInitValue { get; set; } = WindForceScale.CasualWind;
+        public WindForceScale GlaciersWindForceScaleInitValue { get; set; } = WindForceScale.CasualWind;
     }
 }

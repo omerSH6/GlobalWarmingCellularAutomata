@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using GlobalWarmingCellularAutomata.Automata.Entities;
+﻿using GlobalWarmingCellularAutomata.Automata.Entities;
 using GlobalWarmingCellularAutomata.Automata.Entities.Data;
 using GlobalWarmingCellularAutomata.Automata.Enums;
 
@@ -43,13 +42,7 @@ namespace GlobalWarmingCellularAutomata.Automata
 
         private Cell GetUpdatedCell(Cell currentCell, CellNeighbors cellNeighbors)
         {
-            CellType cellType = currentCell.cellType;
-            CloudsRate clouds = currentCell.clouds;
-            TemprateureRate temprateure = currentCell.temperature;
-            WindDirection windDirection = currentCell.wind.WindDirection;
-            WindForceScale windForceScale = currentCell.wind.WindForceScale;
-            AirPollutionRate airPollution = currentCell.airPollution;
-
+            var newCell = new Cell(currentCell.cellType, currentCell.airPollution, currentCell.clouds, currentCell.temperature, currentCell.wind, currentCell.HotDaysCounter, currentCell.ColdDaysCounter, currentCell.RainDaysCounter);
 
             var neighborsWithWindDirectedAtThisCell = GetNeighborsWithWindDirectedAtThisCell(currentCell, cellNeighbors);
 
@@ -59,35 +52,117 @@ namespace GlobalWarmingCellularAutomata.Automata
                     break;
 
                 case 1:
-                    clouds = neighborsWithWindDirectedAtThisCell[0].clouds;
-                    temprateure = neighborsWithWindDirectedAtThisCell[0].temperature;
-                    windDirection = neighborsWithWindDirectedAtThisCell[0].wind.WindDirection;
-                    windForceScale = neighborsWithWindDirectedAtThisCell[0].wind.WindForceScale;
-                    airPollution = neighborsWithWindDirectedAtThisCell[0].airPollution;
+                    newCell.clouds = neighborsWithWindDirectedAtThisCell[0].clouds;
+                    newCell.temperature = neighborsWithWindDirectedAtThisCell[0].temperature;
+                    newCell.wind.WindDirection = neighborsWithWindDirectedAtThisCell[0].wind.WindDirection;
+                    newCell.wind.WindForceScale = neighborsWithWindDirectedAtThisCell[0].wind.WindForceScale;
+                    newCell.airPollution = neighborsWithWindDirectedAtThisCell[0].airPollution;
                     break;
 
                 default:
                     var HigherWindForceScaleDirectedNeighbor = GetHigherWindForceScaleDirectedNeighbor(neighborsWithWindDirectedAtThisCell);
-                    windDirection = HigherWindForceScaleDirectedNeighbor.wind.WindDirection;
+                    newCell.wind.WindDirection = HigherWindForceScaleDirectedNeighbor.wind.WindDirection;
 
-                   
-                    /*
-                    clouds = neighborsWithWindDirectedAtThisCell.s
-                    temprateure = neighborsWithWindDirectedAtThisCell[0].temperature;
-                    windForceScale = neighborsWithWindDirectedAtThisCell[0].wind.WindForceScale;
-                    airPollution = neighborsWithWindDirectedAtThisCell[0].airPollution;
-                    */
+                    newCell.clouds = (CloudsRate)GetAverageEnumValue(neighborsWithWindDirectedAtThisCell.Select(neighbor => neighbor.clouds).ToList());
+                    newCell.temperature = (TemperatureRate)GetAverageEnumValue(neighborsWithWindDirectedAtThisCell.Select(neighbor => neighbor.temperature).ToList());
+                    newCell.wind.WindForceScale = (WindForceScale)GetAverageEnumValue(neighborsWithWindDirectedAtThisCell.Select(neighbor => neighbor.wind.WindForceScale).ToList());
+                    newCell.airPollution = (AirPollutionRate)GetAverageEnumValue(neighborsWithWindDirectedAtThisCell.Select(neighbor => neighbor.airPollution).ToList());
+
+                    if(newCell.wind.WindForceScale == WindForceScale.ExtreamWind)
+                    {
+                        newCell.wind.WindForceScale--;
+                    }
 
                     break;
             }
 
+            if (newCell.cellType == CellType.Sea || newCell.cellType == CellType.Glaciers)
+            {
+                if(newCell.temperature == TemperatureRate.ExtreamHot)
+                {
+                    newCell.temperature--;
+                }
+            }
 
-            return new Cell(cellType, airPollution, clouds, temprateure, new Wind(windDirection, windForceScale));
+            switch (newCell.clouds)
+            {
+                case CloudsRate.RainClouds:
+                    newCell.RainDaysCounter++;
+                    break;
+
+                case CloudsRate.Cloudy:
+                    if(newCell.temperature == TemperatureRate.Freezing)
+                    {
+                        newCell.clouds = CloudsRate.RainClouds;
+                    }
+                    break;
+
+                case CloudsRate.None: 
+                    if(newCell.RainDaysCounter > 0)
+                    {
+                        newCell.RainDaysCounter--;
+                    }
+                    break;
+            }
+
+            if(newCell.airPollution == AirPollutionRate.High && newCell.temperature != TemperatureRate.ExtreamHot)
+            {
+                newCell.temperature++;
+            }
+
+            if(newCell.temperature == TemperatureRate.ExtreamHot || newCell.temperature == TemperatureRate.Hot )
+            {
+                newCell.HotDaysCounter++;
+
+                if(newCell.ColdDaysCounter > 0)
+                {
+                    newCell.ColdDaysCounter--;
+                }
+            }else if(newCell.temperature == TemperatureRate.Freezing )
+            {
+                newCell.ColdDaysCounter++;
+            }
+
+            switch (newCell.cellType)
+            {
+                case CellType.Sea:
+                    if(newCell.HotDaysCounter >= 100)
+                    {
+                        newCell.HotDaysCounter = 0;
+                        newCell.cellType = CellType.Land;
+                    }
+
+                    break;
+
+                case CellType.Glaciers:
+                    if (newCell.HotDaysCounter >= 50)
+                    {
+                        newCell.cellType = CellType.Sea;
+                    }
+
+                    break;
+
+                case CellType.Land:
+                case CellType.City:
+                    if (newCell.RainDaysCounter >= 150)
+                    {
+                        newCell.cellType = CellType.Sea;
+                    }
+
+                    break;
+            }
+
+            return newCell;
         }
 
         private static Cell GetHigherWindForceScaleDirectedNeighbor(List<Cell> neighborsWithWindDirectedAtThisCell)
         {
             return neighborsWithWindDirectedAtThisCell.OrderBy(cell => cell.wind.WindForceScale).ToList().Last();
+        }
+
+        private static int GetAverageEnumValue<T>(List<T> enumList) where T: Enum
+        {
+            return (int)enumList.Average(enumValue => Convert.ToInt32(enumValue));
         }
 
         private void UpdateCellsGrid(Cell[,] updatedCellsGrid)
@@ -105,8 +180,8 @@ namespace GlobalWarmingCellularAutomata.Automata
         private CellNeighbors GetCellNeighbors(int row, int column, int totalRows, int totalcolumns)
         {
             var cellNeighbors = new CellNeighbors();
-            var (UpperNeighborRow, UpperNeighborColumn) = (row + 1, column);
-            var (LowerNeighborRow, LowerNeighborColumn) = (row - 1, column);
+            var (UpperNeighborRow, UpperNeighborColumn) = (row - 1, column);
+            var (LowerNeighborRow, LowerNeighborColumn) = (row + 1, column);
             var (RightNeighborRow, RightNeighborColumn) = (row, column + 1);
             var (LeftNeighborRow, LeftNeighborColumn) = (row, column - 1);
 
@@ -122,7 +197,7 @@ namespace GlobalWarmingCellularAutomata.Automata
 
             if (column == 0)
             {
-                LeftNeighborRow = totalcolumns - 1;
+                LeftNeighborColumn = totalcolumns - 1;
 
             }
             else if (column == totalcolumns - 1)

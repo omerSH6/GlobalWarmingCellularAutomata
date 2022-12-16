@@ -5,37 +5,53 @@ using GlobalWarmingCellularAutomata.Automata.Enums;
 
 namespace GlobalWarmingCellularAutomata.Automata
 {
-    public class GlobalWarmingCellularAutomata
+    public class GlobalWarmingCellularAutomataFacade
     {
+        public Cell[,] CellsGrid { get; }
+
         private readonly AutomataSettings automataSettings;
         private readonly GlobalWarmingStatistics globalWarmingStatistics;
         private readonly GlobalWarmimgRuleSet globalWarmimgRuleSet;
         private readonly Random rnd;
-        private readonly Cell[ , ] cellsGrid;
-
-        public GlobalWarmingCellularAutomata() : this(new AutomataSettings())
+        
+        public GlobalWarmingCellularAutomataFacade() : this(new AutomataSettings())
         {
         }
 
-        public GlobalWarmingCellularAutomata(AutomataSettings automataSettings) 
+        public GlobalWarmingCellularAutomataFacade(AutomataSettings automataSettings) 
         {
-            cellsGrid = new Cell[automataSettings.GridSize, automataSettings.GridSize];
+            CellsGrid = new Cell[automataSettings.GridSize, automataSettings.GridSize];
             this.automataSettings = automataSettings;
             globalWarmingStatistics = new GlobalWarmingStatistics();
-            globalWarmimgRuleSet = new GlobalWarmimgRuleSet(cellsGrid);
+            globalWarmimgRuleSet = new GlobalWarmimgRuleSet(CellsGrid);
             rnd = new Random();
             InitializeCellGrid();
         }
 
+        // Automata iteration
         public void Tick()
         {
             globalWarmimgRuleSet.Tick();
+            globalWarmingStatistics.SaveStatistics(CellsGrid);
+        }
+
+        // question c.1
+        public void PrintDataAverageRangeAndStandardDeviation()
+        {
+            globalWarmingStatistics.PrintDataAverageRangeAndStandardDeviation();
+        }
+
+        // Creates the Reports for question c.2
+        public void CreateReports()
+        {
+            globalWarmingStatistics.CreateReports();
         }
 
         private void InitializeCellGrid()
         {
-            int cellsInGris = cellsGrid.Length;
+            int cellsInGris = CellsGrid.Length;
 
+            // cell type mapped to the expected call amount in grid
             var cellsTypeToDistributeDict = new Dictionary<CellType, int>()
             {
                 {CellType.Land, GetRoundedPercentage(cellsInGris, automataSettings.EarthLandsPercentage)},
@@ -45,29 +61,42 @@ namespace GlobalWarmingCellularAutomata.Automata
                 {CellType.Sea, GetRoundedPercentage(cellsInGris, automataSettings.EarthSeasPercentage)},
             };
 
+            // Lists of all posible cell metadatas
             var cloudsRatesRateList = new List<CloudsRate> { CloudsRate.None, CloudsRate.Cloudy, CloudsRate.RainClouds };
-            var temprateureRatesList = new List<TemprateureRate> { TemprateureRate.Freezing,TemprateureRate.warm, TemprateureRate.Hot, TemprateureRate.ExtreamHot};
+            var temprateureRatesList = new List<TemperatureRate> { TemperatureRate.Freezing,TemperatureRate.warm, TemperatureRate.Hot, TemperatureRate.ExtreamHot};
             var WindDirectionsList = new List<WindDirection> { WindDirection.North, WindDirection.East, WindDirection.South, WindDirection.West};
             var WindForceScalesList = new List<WindForceScale> { WindForceScale.ExtreamWind, WindForceScale.None, WindForceScale.StrongWind, WindForceScale.CasualWind};
-            var airPollutionRatesList = new List<AirPollutionRate> { AirPollutionRate.Medium, AirPollutionRate.High };
 
-            for (int i = 0; i < cellsGrid.GetLength(0); i++)
+            for (int i = 0; i < CellsGrid.GetLength(0); i++)
             {
-                for (int j = 0; j < cellsGrid.GetLength(1); j++)
+                for (int j = 0; j < CellsGrid.GetLength(1); j++)
                 {
                     CellType cellType = GetRandomCellTypeFromDistributeDict(cellsTypeToDistributeDict);
                     CloudsRate clouds = GetRandomValueFromList(cloudsRatesRateList);
-                    TemprateureRate temprateure = GetRandomValueFromList(temprateureRatesList);
+                    TemperatureRate temprateure = GetRandomValueFromList(temprateureRatesList);
                     WindDirection windDirection = GetRandomValueFromList(WindDirectionsList);
                     WindForceScale windForceScale = GetRandomValueFromList(WindForceScalesList);
                     AirPollutionRate airPollution = AirPollutionRate.None;
 
-                    if (cellType == CellType.City)
+                    // apply specific settings
+                    switch (cellType)
                     {
-                        airPollution = GetRandomValueFromList(airPollutionRatesList);
+                        case CellType.City:
+                            airPollution = automataSettings.CitiesAirPollutionRateInitValue;
+                            break;
+                        case CellType.Sea:
+                            temprateure = automataSettings.SeasTemprateureRateInitValue; 
+                            break;
+                        case CellType.Land:
+                            clouds = automataSettings.LandsCloudsRateInitValue;
+                            break;
+                        case CellType.Glaciers:
+                            windForceScale = automataSettings.GlaciersWindForceScaleInitValue;
+                            break;
                     }
 
-                    cellsGrid[i,j] = new Cell(cellType, airPollution, clouds, temprateure, new Wind(windDirection, windForceScale));
+
+                    CellsGrid[i,j] = new Cell(cellType, airPollution, clouds, temprateure, new Wind(windDirection, windForceScale));
                 }
             }
         }
@@ -103,7 +132,7 @@ namespace GlobalWarmingCellularAutomata.Automata
 
         private static int GetRoundedPercentage(int num, int percentage)
         {
-            return Convert.ToInt32(Math.Round(((double)num / percentage) * 100, 0));
+            return Convert.ToInt32(Math.Round(((double)num * percentage) / 100, 0));
         }
     }
 }

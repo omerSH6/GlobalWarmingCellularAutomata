@@ -10,6 +10,11 @@
             WindDirection = windDirection; 
             WindForceScale = windForceScale;
         }
+
+        public override string ToString()
+        {
+            return $"Direction:{WindDirection},Force:{WindForceScale}";
+        }
     }
 
     public enum WindDirection
